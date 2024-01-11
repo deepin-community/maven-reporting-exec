@@ -19,7 +19,6 @@ package org.apache.maven.reporting.exec;
  * under the License.
  */
 
-import com.google.common.collect.Lists;
 import org.apache.maven.DefaultMaven;
 import org.apache.maven.Maven;
 import org.apache.maven.RepositoryUtils;
@@ -38,22 +37,26 @@ import org.apache.maven.model.PluginManagement;
 import org.apache.maven.plugin.testing.stubs.MavenProjectStub;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+import org.apache.maven.settings.Mirror;
 import org.apache.maven.settings.Settings;
 import org.apache.maven.settings.building.DefaultSettingsBuildingRequest;
 import org.apache.maven.settings.building.SettingsBuilder;
 import org.apache.maven.settings.building.SettingsBuildingException;
 import org.apache.maven.settings.building.SettingsBuildingRequest;
+import org.codehaus.plexus.ContainerConfiguration;
+import org.codehaus.plexus.PlexusConstants;
 import org.codehaus.plexus.PlexusTestCase;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.codehaus.plexus.logging.Logger;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.repository.WorkspaceReader;
-import org.sonatype.aether.repository.WorkspaceRepository;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.WorkspaceReader;
+import org.eclipse.aether.repository.WorkspaceRepository;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -63,6 +66,12 @@ import java.util.List;
 public class TestDefaultMavenReportExecutor
     extends PlexusTestCase
 {
+    @Override
+    protected void customizeContainerConfiguration( @SuppressWarnings( "unused" ) final ContainerConfiguration configuration )
+    {
+        super.customizeContainerConfiguration( configuration );
+        configuration.setAutoWiring( true ).setClassPathScanning( PlexusConstants.SCANNING_CACHE );
+    }
 
     MavenExecutionRequest request = null;
 
@@ -155,7 +164,7 @@ public class TestDefaultMavenReportExecutor
 
             MavenSession mavenSession = getMavenSession( getLocalArtifactRepository(), mavenProject );
             mavenSession.setCurrentProject( mavenProject );
-            mavenSession.setProjects( Lists.<MavenProject>newArrayList( mavenProject ) );
+            mavenSession.setProjects( Arrays.asList( mavenProject ) );
             mavenReportExecutorRequest.setMavenSession( mavenSession );
 
             ReportPlugin reportPlugin = new ReportPlugin();
@@ -168,7 +177,7 @@ public class TestDefaultMavenReportExecutor
                 reportPlugin.getReportSets().add( reportSet );
             }
 
-            List<ReportPlugin> reportPlugins = Lists.newArrayList( reportPlugin );
+            List<ReportPlugin> reportPlugins = Arrays.asList( reportPlugin );
 
             mavenReportExecutorRequest.setReportPlugins( reportPlugins.toArray( new ReportPlugin[1] ) );
 
@@ -190,22 +199,31 @@ public class TestDefaultMavenReportExecutor
 
         request.setWorkspaceReader( new WorkspaceReader()
         {
+            @Override
             public WorkspaceRepository getRepository()
             {
                 return new WorkspaceRepository();
             }
 
+            @Override
             public File findArtifact( Artifact artifact )
             {
                 return null;
             }
 
+            @Override
             public List<String> findVersions( Artifact artifact )
             {
                 return Collections.emptyList();
             }
         } );
         final Settings settings = getSettings();
+
+        Mirror centralMirror = new Mirror();
+        centralMirror.setId("httpsCentral");
+        centralMirror.setMirrorOf( "central" );
+        centralMirror.setUrl( "https://repo.maven.apache.org/maven2" );
+        request.setMirrors( Collections.singletonList( centralMirror ) );
 
         getContainer().lookup( MavenExecutionRequestPopulator.class ).populateFromSettings( request, settings );
 
@@ -224,7 +242,7 @@ public class TestDefaultMavenReportExecutor
 
         RepositorySystemSession repositorySystemSession = buildRepositorySystemSession( request );
 
-        MavenSession mavenSession = new MavenSession( getContainer(), repositorySystemSession, request, result )
+        return new MavenSession( getContainer(), repositorySystemSession, request, result )
         {
             @Override
             public MavenProject getTopLevelProject()
@@ -241,7 +259,7 @@ public class TestDefaultMavenReportExecutor
             @Override
             public List<MavenProject> getProjects()
             {
-                return Lists.newArrayList( mavenProject );
+                return Arrays.asList( mavenProject );
             }
 
             @Override
@@ -251,7 +269,6 @@ public class TestDefaultMavenReportExecutor
             }
 
         };
-        return mavenSession;
     }
 
     private ArtifactRepository getLocalArtifactRepository()
@@ -280,10 +297,8 @@ public class TestDefaultMavenReportExecutor
 
         settingsBuildingRequest.getSystemProperties().putAll( System.getProperties() );
 
-        Settings settings =
-            getContainer().lookup( SettingsBuilder.class ).build( settingsBuildingRequest ).getEffectiveSettings();
-
-        return settings;
+        return getContainer().lookup( SettingsBuilder.class )
+                .build( settingsBuildingRequest ).getEffectiveSettings();
 
     }
 
@@ -332,13 +347,13 @@ public class TestDefaultMavenReportExecutor
             @Override
             public List<String> getCompileSourceRoots()
             {
-                return Lists.newArrayList( "src/main/java" );
+                return Arrays.asList( "src/main/java" );
             }
 
             @Override
             public List<String> getTestCompileSourceRoots()
             {
-                return Lists.newArrayList( "src/test/java" );
+                return Arrays.asList( "src/test/java" );
             }
         };
 

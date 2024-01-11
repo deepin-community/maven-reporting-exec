@@ -20,7 +20,6 @@ package org.apache.maven.shared.it;
  */
 
 import org.apache.maven.doxia.sink.Sink;
-import org.apache.maven.doxia.sink.SinkAdapter;
 import org.apache.maven.doxia.siterenderer.Renderer;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
@@ -29,9 +28,9 @@ import org.apache.maven.reporting.MavenReportException;
 import java.util.Locale;
 
 /**
- * Report that displays effective parameter values: will be used to check how report values
+ * Report that displays effective parameter values: used to check how report values
  * are inherited/overridden from build.pluginManagement and not build.plugins.
- * 
+ *
  * @goal test
  * @phase site
  */
