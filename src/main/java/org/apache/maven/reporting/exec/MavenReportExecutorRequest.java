@@ -33,7 +33,7 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
  * the intent is to store some informations regarding the current Maven execution.
  * 
  * @author Olivier Lamy
- * @version $Id: MavenReportExecutorRequest.java 1787667 2017-03-19 22:18:45Z hboutemy $
+ * @version $Id$
  */
 public class MavenReportExecutorRequest
 {
@@ -107,7 +107,7 @@ public class MavenReportExecutorRequest
                 p.setConfiguration( new XmlPlexusConfiguration( (Xpp3Dom) r.getConfiguration() ) );
             }
 
-            List<ReportSet> prs = new ArrayList<ReportSet>();
+            List<ReportSet> prs = new ArrayList<>();
             for ( org.apache.maven.model.ReportSet rs : r.getReportSets() )
             {
                 ReportSet ps = new ReportSet();

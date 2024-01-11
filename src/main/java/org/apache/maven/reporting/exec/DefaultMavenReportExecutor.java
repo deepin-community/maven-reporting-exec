@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.maven.lifecycle.LifecycleExecutor;
@@ -45,11 +46,11 @@ import org.apache.maven.plugin.version.PluginVersionResolver;
 import org.apache.maven.plugin.version.PluginVersionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.MavenReport;
+import org.apache.maven.shared.utils.StringUtils;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.logging.Logger;
-import org.apache.maven.shared.utils.StringUtils;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomUtils;
 
@@ -62,6 +63,7 @@ import org.codehaus.plexus.util.xml.Xpp3DomUtils;
  * <p>
  * <b>Note</b> if no version is defined in the report plugin, the version will be searched with
  * {@link #resolvePluginVersion(ReportPlugin, MavenReportExecutorRequest) resolvePluginVersion(...)} method:
+ * </p>
  * <ol>
  * <li>use the one defined in the reportPlugin configuration,</li>
  * <li>search similar (same groupId and artifactId) plugin in the build/plugins section of the pom,</li>
@@ -69,9 +71,9 @@ import org.codehaus.plexus.util.xml.Xpp3DomUtils;
  * <li>ask {@link PluginVersionResolver} to get a fallback version (display a warning as it's not a recommended use).
  * </li>
  * </ol>
- * </p>
  * <p>
  * Following steps are done:
+ * </p>
  * <ul>
  * <li>get {@link PluginDescriptor} from the {@link MavenPluginManager} (through
  * {@link MavenPluginManagerHelper#getPluginDescriptor(Plugin, org.apache.maven.execution.MavenSession)
@@ -89,8 +91,7 @@ import org.codehaus.plexus.util.xml.Xpp3DomUtils;
  * LifecycleExecutor.calculateForkedExecutions(...)} if any forked execution is needed: if yes, execute the forked
  * execution here</li>
  * </ul>
- * </p>
- * 
+ *
  * @author Olivier Lamy
  */
 @Component( role = MavenReportExecutor.class )
@@ -116,15 +117,19 @@ public class DefaultMavenReportExecutor
                                                                "org.apache.maven.reporting.MavenMultiPageReport",
                                                                "org.apache.maven.doxia.siterenderer.Renderer",
                                                                "org.apache.maven.doxia.sink.SinkFactory",
+                                                               // TODO Will be removed with Doxia 2.0.0-M1
                                                                "org.codehaus.doxia.sink.Sink",
                                                                "org.apache.maven.doxia.sink.Sink",
                                                                "org.apache.maven.doxia.sink.SinkEventAttributes",
+                                                               // TODO Will be removed with Doxia 2.0.0-M1
                                                                "org.apache.maven.doxia.logging.LogEnabled",
+                                                               // TODO Will be removed with Doxia 2.0.0-M1
                                                                "org.apache.maven.doxia.logging.Log" );
 
     private static final List<String> EXCLUDES = Arrays.asList( "doxia-site-renderer", "doxia-sink-api",
                                                                 "maven-reporting-api" );
 
+    @Override
     public List<MavenReportExecution> buildMavenReports( MavenReportExecutorRequest mavenReportExecutorRequest )
         throws MojoExecutionException
     {
@@ -134,8 +139,8 @@ public class DefaultMavenReportExecutor
         }
         getLog().debug( "DefaultMavenReportExecutor.buildMavenReports()" );
 
-        Set<String> reportPluginKeys = new HashSet<String>();
-        List<MavenReportExecution> reportExecutions = new ArrayList<MavenReportExecution>();
+        Set<String> reportPluginKeys = new HashSet<>();
+        List<MavenReportExecution> reportExecutions = new ArrayList<>();
 
         String pluginKey = "";
         try
@@ -177,11 +182,11 @@ public class DefaultMavenReportExecutor
             mavenPluginManagerHelper.getPluginDescriptor( plugin, mavenReportExecutorRequest.getMavenSession() );
 
         // step 2: prepare the goals
-        List<GoalWithConf> goalsWithConfiguration = new ArrayList<GoalWithConf>();
+        List<GoalWithConf> goalsWithConfiguration = new ArrayList<>();
         boolean hasUserDefinedReports = prepareGoals( reportPlugin, pluginDescriptor, goalsWithConfiguration );
 
         // step 3: prepare the reports
-        List<MavenReportExecution> reports = new ArrayList<MavenReportExecution>();
+        List<MavenReportExecution> reports = new ArrayList<>( goalsWithConfiguration.size() );
         for ( GoalWithConf report : goalsWithConfiguration )
         {
             MavenReportExecution mavenReportExecution =
@@ -230,7 +235,7 @@ public class DefaultMavenReportExecutor
             return false;
         }
 
-        Set<String> goals = new HashSet<String>();
+        Set<String> goals = new HashSet<>();
         for ( String report : reportPlugin.getReports() )
         {
             if ( goals.add( report ) )
@@ -246,7 +251,7 @@ public class DefaultMavenReportExecutor
 
         for ( ReportSet reportSet : reportPlugin.getReportSets() )
         {
-            goals = new HashSet<String>();
+            goals = new HashSet<>();
             for ( String report : reportSet.getReports() )
             {
                 if ( goals.add( report ) )
@@ -385,7 +390,7 @@ public class DefaultMavenReportExecutor
         }
         catch ( PluginContainerException e )
         {
-            /**
+            /*
              * ignore old plugin which are using removed PluginRegistry [INFO] Caused by:
              * java.lang.NoClassDefFoundError: org/apache/maven/plugin/registry/PluginRegistry
              */
@@ -549,11 +554,11 @@ public class DefaultMavenReportExecutor
      * <li>ask {@link PluginVersionResolver} to get a fallback version and display a warning as it's not a recommended
      * use.</li>
      * </ol>
-     * 
+     *
      * @param reportPlugin the report plugin to resolve the version
      * @param mavenReportExecutorRequest the current report execution context
      * @return the report plugin version
-     * @throws PluginVersionResolutionException
+     * @throws PluginVersionResolutionException on plugin version resolution issue
      */
     protected String resolvePluginVersion( ReportPlugin reportPlugin,
                                            MavenReportExecutorRequest mavenReportExecutorRequest )
@@ -635,7 +640,7 @@ public class DefaultMavenReportExecutor
 
     /**
      * Search similar (same groupId and artifactId) plugin as a given report plugin.
-     * 
+     *
      * @param reportPlugin the report plugin to search for a similar plugin
      * @param plugins the candidate plugins
      * @return the first similar plugin
@@ -648,8 +653,8 @@ public class DefaultMavenReportExecutor
         }
         for ( Plugin plugin : plugins )
         {
-            if ( StringUtils.equals( plugin.getArtifactId(), reportPlugin.getArtifactId() )
-                && StringUtils.equals( plugin.getGroupId(), reportPlugin.getGroupId() ) )
+            if ( Objects.equals( plugin.getArtifactId(), reportPlugin.getArtifactId() )
+                && Objects.equals( plugin.getGroupId(), reportPlugin.getGroupId() ) )
             {
                 return plugin;
             }
@@ -667,7 +672,7 @@ public class DefaultMavenReportExecutor
      * </ul>
      * </p>
      * The plugin could only be present in the dependency management section.
-     * 
+     *
      * @param mavenReportExecutorRequest
      * @param buildPlugin
      * @param reportPlugin

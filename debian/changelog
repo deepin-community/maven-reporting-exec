@@ -1,3 +1,15 @@
+maven-reporting-exec (1.6.0-1) unstable; urgency=medium
+
+  * New upstream release
+    - Removed the patches
+    - New dependencies on libmaven-shade-plugin-java
+      and libmaven-resolver-transport-http-java
+    - Removed the dependency on velocity
+    - Depend on libmaven-parent-java to inherit the missing dependency versions
+  * Standards-Version updated to 4.6.2
+
+ -- Emmanuel Bourg <ebourg@apache.org>  Fri, 06 Jan 2023 15:31:16 +0100
+
 maven-reporting-exec (1.4-3) unstable; urgency=medium
 
   * Depend on eclipse-sisu instead of sonatype-sisu (Closes: #982710)

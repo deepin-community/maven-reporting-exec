@@ -28,7 +28,7 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
  * Represents a set of reports and a configuration to be used to generate them.
  * @see org.apache.maven.model.ReportSet
  */
-public class ReportSet
+class ReportSet
 {
 
     private String id = "default";
@@ -61,7 +61,7 @@ public class ReportSet
     {
         if ( this.reports == null )
         {
-            this.reports = new ArrayList<String>();
+            this.reports = new ArrayList<>();
         }
 
         return this.reports;
